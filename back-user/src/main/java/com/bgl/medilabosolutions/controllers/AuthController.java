@@ -1,6 +1,7 @@
 package com.bgl.medilabosolutions.controllers;
 
 import com.bgl.medilabosolutions.dto.LoginRequest;
+import com.bgl.medilabosolutions.security.SecurityConfig;
 import com.bgl.medilabosolutions.security.TokenService;
 import jakarta.validation.Valid;
 import org.springframework.security.authentication.AuthenticationManager;
