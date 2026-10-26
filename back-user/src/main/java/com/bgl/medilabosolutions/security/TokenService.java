@@ -1,6 +1,10 @@
 package com.bgl.medilabosolutions.security;
 
 
+import com.bgl.medilabosolutions.dto.UserTokenDto;
+import com.bgl.medilabosolutions.entities.UserEntity;
+import com.bgl.medilabosolutions.exception.UserNotFoundException;
+import com.bgl.medilabosolutions.repositories.UserRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -18,19 +22,27 @@ import java.util.Objects;
 public class TokenService {
 
     private final JwtEncoder encoder;
+    private final UserRepository userRepository;
 
-    public TokenService(JwtEncoder encoder) {
+    public TokenService(JwtEncoder encoder, UserRepository userRepository) {
         this.encoder = encoder;
+        this.userRepository = userRepository;
     }
 
     public String generateToken(Authentication auth) {
+
+        UserEntity user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + auth.getName()));
+        UserTokenDto dto = new UserTokenDto(user.getId(), user.getEmail());
+
         Instant now = Instant.now();
         List<String> roles = auth.getAuthorities().stream()
                 .map(a -> Objects.requireNonNull(a.getAuthority()).replace("ROLE_", ""))
                 .toList();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .subject(auth.getName())                      // email
+                .subject(String.valueOf(dto.id()))
+                .claim("email", dto.email())
                 .issuedAt(now)
                 .expiresAt(now.plus(1, ChronoUnit.HOURS))
                 .claim("roles", roles)
